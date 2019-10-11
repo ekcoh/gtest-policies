@@ -1,0 +1,2 @@
+add_subdirectory(01_memory_leak_detection)
+add_subdirectory(02_scoped_policies)
