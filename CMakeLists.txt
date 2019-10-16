@@ -1,32 +1,49 @@
 cmake_minimum_required (VERSION 3.6)
 
-project( gtest_policy LANGUAGES CXX)
+###################################################################################################
+# project: gtest_policy
+###################################################################################################
+
+project(gtest_policy 
+    VERSION 0.0.0.0
+	HOMEPAGE_URL https://github.com/ekcoh/gtest-policies
+	LANGUAGES CXX
+)
 string(TOUPPER ${PROJECT_NAME} PROJECT_NAME_UCASE)
+
+option(${PROJECT_NAME_UCASE}_BUILD_TESTS 
+	"If enabled, compile the tests." ON)
+option(${PROJECT_NAME_UCASE}_BUILD_EXAMPLES 
+	"If enabled, compile the examples." ON)
+option(${PROJECT_NAME_UCASE}_DOWNLOAD_GTEST 
+	"If enabled, download and build gtest as external project" ON)
 
 ###################################################################################################
 # Download and unpack googletest at configure time
 ###################################################################################################
-configure_file(external/googletest/CMakeLists.txt.in external/googletest-download/CMakeLists.txt)
-execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
-  RESULT_VARIABLE result
-  WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/external/googletest-download )
-if(result)
-  message(FATAL_ERROR "CMake step for googletest failed: ${result}")
-endif()
-execute_process(COMMAND ${CMAKE_COMMAND} --build .
-  RESULT_VARIABLE result
-  WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/external/googletest-download )
-if(result)
-  message(FATAL_ERROR "Build step for googletest failed: ${result}")
-endif()
+if (${PROJECT_NAME_UCASE}_DOWNLOAD_GTEST)
+	configure_file(external/googletest/CMakeLists.txt.in external/googletest-download/CMakeLists.txt)
+	execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
+	  RESULT_VARIABLE result
+	  WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/external/googletest-download )
+	if(result)
+	  message(FATAL_ERROR "CMake step for googletest failed: ${result}")
+	endif()
+	execute_process(COMMAND ${CMAKE_COMMAND} --build .
+	  RESULT_VARIABLE result
+	  WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/external/googletest-download )
+	if(result)
+	  message(FATAL_ERROR "Build step for googletest failed: ${result}")
+	endif()
 
-# Prevent overriding the parent project's compiler/linker settings on Windows
-set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+	# Prevent overriding the parent project's compiler/linker settings on Windows
+	set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 
-# Add googletest directly to our build. This defines the gtest and gtest_main targets.
-add_subdirectory(${CMAKE_BINARY_DIR}/external/googletest-src
-                 ${CMAKE_BINARY_DIR}/external/googletest-build
-                 EXCLUDE_FROM_ALL)
+	# Add googletest directly to our build. This defines the gtest and gtest_main targets.
+	add_subdirectory(${CMAKE_BINARY_DIR}/external/googletest-src
+					 ${CMAKE_BINARY_DIR}/external/googletest-build
+					 EXCLUDE_FROM_ALL)
+endif(${PROJECT_NAME_UCASE}_DOWNLOAD_GTEST)
 
 ###################################################################################################
 # library
@@ -62,8 +79,8 @@ target_link_libraries(${PROJECT_NAME}
 # tests
 ###################################################################################################
 
-option(${PROJECT_NAME_UCASE}_BUILD_TESTS "If enabled, compile the tests." ON)
 if (${PROJECT_NAME_UCASE}_BUILD_TESTS)
+	enable_testing()
 	add_subdirectory(test)
 endif(${PROJECT_NAME_UCASE}_BUILD_TESTS)
 
@@ -71,7 +88,6 @@ endif(${PROJECT_NAME_UCASE}_BUILD_TESTS)
 # examples
 ###################################################################################################
 
-option(${PROJECT_NAME_UCASE}_BUILD_EXAMPLES "If enabled, compile the examples." ON)
 if (${PROJECT_NAME_UCASE}_BUILD_EXAMPLES)
 	add_subdirectory(example)
 endif(${PROJECT_NAME_UCASE}_BUILD_EXAMPLES)
