@@ -28,7 +28,19 @@ int main(int argc, char **argv)
 {
 	::testing::InitGoogleTest(&argc, argv);
 	::testing::UnitTest::GetInstance()->listeners().Append(
-		new gtest_policy::DynamicMemoryAllocationPolicyListener());
+		new gtest_policy::MemoryAllocationPolicyListener());
+	::testing::UnitTest::GetInstance()->listeners().Append(
+		new gtest_policy::StandardOutputStreamPolicyListener());
+	::testing::UnitTest::GetInstance()->listeners().Append(
+		new gtest_policy::StandardErrorStreamPolicyListener());		
+	return RUN_ALL_TESTS();
+}
+```
+```cpp
+int main(int argc, char **argv)
+{
+	::testing::InitGoogleTest(&argc, argv);
+	GTEST_POLICY_SETUP_ALL_DENY_ALL;
 	return RUN_ALL_TESTS();
 }
 ```
