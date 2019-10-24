@@ -64,6 +64,7 @@ In order to use the MemoryPolicyListener it must be added as a test event listen
 If this policy is denied any detected dynamic memory allocation via new, malloc etc. will be reported as a failed unit test. In order to detect where allocation occurss, re-run failed tests in debug mode to break at the allocation and follow the stack trace to find the allocation call.
 
 ## Known Limitations
+- It would make sense to default all policies to being denied by default. However, due to limitations and implementation specific details of Google Test this is currently not possible and all policies are granted by default. This can easily be managed though by explicitly denying them in the SetUp method of the fixture, possibly in a shared base class like gtest_policies::policy_test.
 - Dynamic memory allocation policy violations is currently only supported in MSVC via CRT Heap Debug builds in debug mode. On other configurations or tool-chains this policy reverts to basic global overloading of new and delete operators.
 
 ## License
