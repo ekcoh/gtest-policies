@@ -68,31 +68,29 @@ The approach that requires the least amount of work is to apply all policies (on
 ```cpp
 class MyFixture : public ::testing::Test 
 { 
-...
+   // ...
    void SetUp() override
    {
       gtest_policies::Apply();
    }
-...
+   //...
 };
-...
+
 TEST_F(MyFixture, MyTest)
 {
    // Test implementation...
 }
-...
 ```
 
 ...or derive from a test class doing it for you already:
 
 ```cpp
 class fixture : public gtest_policies::Test { };
-...
+
 TEST_F(MyFixture, MyTest)
 {
    // Test implementation...
 }
-...
 ```
 
 More examples can be found in [example/](example) folder.
