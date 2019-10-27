@@ -83,13 +83,18 @@
 
 namespace gtest_policies
 {
+#ifdef GTEST_POLICY_CRTDBG_AVAILABLE
+	_CRT_ALLOC_HOOK stored_alloc_hook = nullptr;
+#endif
+
 	class AllocMonitor : public gtest_policies::detail::PolicyMonitor
 	{
 	public:
 #ifdef GTEST_POLICY_CRTDBG_AVAILABLE
 		AllocMonitor()
-			: pre_count_(0u) 
-		{ }
+			: pre_count_(0u)
+		{ 
+		}
 #else
 		AllocMonitor(PolicyListener*) { }
 #endif
@@ -100,7 +105,10 @@ namespace gtest_policies
 		{
 #ifdef GTEST_POLICY_CRTDBG_AVAILABLE
 			if (IsDebuggerPresent())
+			{
+				stored_alloc_hook = _CrtGetAllocHook();
 				_CrtSetAllocHook(AllocHook);
+			}
 
 			_CrtMemState state;
 			_CrtMemCheckpoint(&state);
@@ -116,7 +124,10 @@ namespace gtest_policies
 			const auto post_count = state.lTotalCount;
 
 			if (IsDebuggerPresent())
-				_CrtSetAllocHook(nullptr);
+			{
+				_CrtSetAllocHook(stored_alloc_hook);
+				stored_alloc_hook = nullptr;
+			}
 
 			const auto diff = post_count - pre_count_;
 			return diff != 0;
@@ -127,15 +138,26 @@ namespace gtest_policies
 #ifdef GTEST_POLICY_CRTDBG_AVAILABLE
 		static int __cdecl AllocHook(
 			int nAllocType, 
-			void* /*pvData*/,
-			size_t /*nSize*/, 
-			int /*nBlockUse*/,
-			long /*lRequest*/,
-			const unsigned char * /*szFileName*/,
-			int /*nLine*/)
+			void* pvData,
+			size_t nSize, 
+			int nBlockUse,
+			long lRequest,
+			const unsigned char * szFileName,
+			int nLine)
 		{
 			if (nAllocType == _HOOK_FREE)
-				return TRUE;
+			{
+				if (stored_alloc_hook == nullptr)
+					return TRUE;
+				return stored_alloc_hook(
+					nAllocType, 
+					pvData, 
+					nSize, 
+					nBlockUse, 
+					lRequest, 
+					szFileName, 
+					nLine);
+			}
 
 			// IMPORTANT INFORMATION:
 			// If your debugger breaks here it means allocation has been denied 
@@ -151,7 +173,16 @@ namespace gtest_policies
 				DebugBreak();
 			}
 
-			return TRUE; // Allow the memory operation to proceed
+			if (stored_alloc_hook == nullptr)
+				return TRUE; // Allow the memory operation to proceed
+			return stored_alloc_hook(
+				nAllocType,
+				pvData,
+				nSize,
+				nBlockUse,
+				lRequest,
+				szFileName,
+				nLine);
 		}
 
 		size_t pre_count_;
