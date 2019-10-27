@@ -1,3 +1,34 @@
+// 
+// MIT License
+// 
+// Copyright(c) 2019 Håkan Sidenvall.
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files(the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions :
+// 
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+//
+// Policy Extensions for the Google C++ Testing and Mocking Framework (Google Test).
+//
+// This header file defines the public API for Google Test Policy Extensions. 
+// It should be included by any test program that uses Google Test Policy Extension.
+//
+// Code style used is same as Google Test source code to make source code blend.
+
 #ifndef GTEST_POLICY_ALLOC_H
 #define GTEST_POLICY_ALLOC_H
 
@@ -50,61 +81,46 @@
   #include <Windows.h> // IsDebuggerPresent, DebugBreak
 #endif // GTEST_POLICY_CRTDBG_AVAILABLE
 
-gtest_policy::PolicyContext
-gtest_policy::policies::dynamic_memory_allocation = gtest_policy::PolicyContext();
-
 namespace gtest_policy
 {
-	class DynamicMemoryAllocationPolicyListener::Impl
+	class AllocMonitor : public gtest_policy::PolicyMonitor
 	{
 	public:
 #ifdef GTEST_POLICY_CRTDBG_AVAILABLE
-		Impl(PolicyListener* listener) 
-
-			: listener_(listener), 
-			pre_count_(0u) 
+		AllocMonitor()
+			: pre_count_(0u) 
 		{ }
 #else
-		Impl(PolicyListener*) { }
+		AllocMonitor(PolicyListener*) { }
 #endif
 
-		~Impl() = default;
+		~AllocMonitor() = default;
 
-		void OnTestStart() 
+		void Start() 
 		{
 #ifdef GTEST_POLICY_CRTDBG_AVAILABLE
+			if (IsDebuggerPresent())
+				_CrtSetAllocHook(AllocHook);
+
 			_CrtMemState state;
 			_CrtMemCheckpoint(&state);
 			pre_count_ = state.lTotalCount;
-
-			if (IsDebuggerPresent())
-				_CrtSetAllocHook(AllocHook);
 #endif // GTEST_POLICY_CRTDBG_AVAILABLE
 		}
 
-		void OnTestEnd() 
+		bool Stop() 
 		{
 #ifdef GTEST_POLICY_CRTDBG_AVAILABLE
+			_CrtMemState state;
+			_CrtMemCheckpoint(&state);
+			const auto post_count = state.lTotalCount;
+
 			if (IsDebuggerPresent())
 				_CrtSetAllocHook(nullptr);
 
-			_CrtMemState state;
-			_CrtMemCheckpoint(&state);
-
-			if (state.lTotalCount - pre_count_ != 0)
-				listener_->ReportViolation();
-
+			const auto diff = post_count - pre_count_;
+			return diff != 0;
 #endif // GTEST_POLICY_CRTDBG_AVAILABLE
-		}
-
-		void OnPolicyViolation()
-		{
-			GTEST_NONFATAL_FAILURE_(\
-				"Policy violation: gtest_policy::dynamic_memory_allocation\n" \
-				"Dynamic memory allocation is not permitted by the test policy " \
-				"for this test case. " \
-				"Re-run the test case in debug mode with debugger attached to " \
-				"break at the allocation causing this policy violation. ");
 		}
 
 	private:
@@ -138,7 +154,6 @@ namespace gtest_policy
 			return TRUE; // Allow the memory operation to proceed
 		}
 
-		PolicyListener* listener_;
 		size_t pre_count_;
 #endif
 	};
@@ -185,40 +200,17 @@ void operator delete[](void *p) throw()
 #endif
 
 gtest_policy::DynamicMemoryAllocationPolicyListener::DynamicMemoryAllocationPolicyListener() : 
-	PolicyListener(policies::dynamic_memory_allocation), 
-	impl_(std::make_unique<DynamicMemoryAllocationPolicyListener::Impl>(this))
+	PolicyListener(policies::dynamic_memory_allocation, std::make_unique<AllocMonitor>())
 { }
-
-gtest_policy::DynamicMemoryAllocationPolicyListener::~DynamicMemoryAllocationPolicyListener()
-{ } // empty, required for PIMPL
-
-void gtest_policy::DynamicMemoryAllocationPolicyListener::OnTestStart(
-	const ::testing::TestInfo& test_info) 
-{
-	PolicyListener::OnTestStart(test_info);
-	if (Policy().IsDenied())
-		impl_->OnTestStart();
-}
-
-void gtest_policy::DynamicMemoryAllocationPolicyListener::OnTestEnd(
-	const ::testing::TestInfo& test_info) 
-{
-	if (Policy().IsDenied())
-		impl_->OnTestEnd();
-	PolicyListener::OnTestEnd(test_info);
-}
 
 void gtest_policy::DynamicMemoryAllocationPolicyListener::OnPolicyViolation()
 {
-	impl_->OnPolicyViolation();
-}
-
-void gtest_policy::DynamicMemoryAllocationPolicyListener::OnPolicyChangeDuringTest(bool deny) noexcept
-{
-	if (deny) // Transition from Grant -> deny
-		impl_->OnTestStart();
-	else // Transition from deny -> Grant      
-		impl_->OnTestEnd();	
+	GTEST_NONFATAL_FAILURE_(\
+		"Policy violation: gtest_policy::dynamic_memory_allocation\n" \
+		"Dynamic memory allocation is not permitted by the test policy " \
+		"for this test case. " \
+		"Re-run the test case in debug mode with debugger attached to " \
+		"break at the allocation causing this policy violation. ");
 }
 
 #endif // GTEST_POLICY_ALLOC_H

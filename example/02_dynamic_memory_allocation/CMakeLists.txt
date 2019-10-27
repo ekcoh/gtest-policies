@@ -12,6 +12,7 @@ target_link_libraries(${PROJECT_NAME}_example_01_memory_leak_detection
 	PRIVATE gtest_main
 )
 
+# Uncomment to debug example tests
 #enable_testing()
 #add_test(NAME ${PROJECT_NAME}_example_01_memory_leak_detection 
 #	COMMAND ${PROJECT_NAME}_example_01_memory_leak_detection

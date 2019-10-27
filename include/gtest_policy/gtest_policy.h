@@ -35,6 +35,12 @@
 #include <gtest/gtest.h> // Google Test
 #include <memory>        // std::unique_ptr
 
+#ifndef GTEST_POLICY_ENABLE_ALLOCATION_POLICY
+#define GTEST_POLICY_ENABLE_ALLOCATION_POLICY \
+::testing::UnitTest::GetInstance()->listeners().Append( \
+	new gtest_policy::DynamicMemoryAllocationPolicyListener())
+#endif 
+
 // Convenience macro to generate a main program entry point with policy 
 // extension enabled by adding test listeners. Listeners are freed by 
 // the framework on shutdown.
@@ -44,9 +50,11 @@ int main(int argc, char **argv) \
 { \
 	::testing::InitGoogleTest(&argc, argv); \
 	::testing::UnitTest::GetInstance()->listeners().Append( \
-		new gtest_policy::MemoryListener()); \
-	::testing::UnitTest::GetInstance()->listeners().Append( \
 		new gtest_policy::DynamicMemoryAllocationPolicyListener()); \
+	::testing::UnitTest::GetInstance()->listeners().Append( \
+		new gtest_policy::StdOutPolicyListener()); \
+	::testing::UnitTest::GetInstance()->listeners().Append( \
+		new gtest_policy::StdErrPolicyListener()); \
 	return RUN_ALL_TESTS(); \
 }
 #endif // #ifndef GTEST_POLICY_MAIN
@@ -69,6 +77,7 @@ class PolicyContext {
 
   void Deny() noexcept;
   void Grant() noexcept;
+  void Apply() noexcept;
 
   void SetDenied(bool denied) noexcept;
 
@@ -91,7 +100,48 @@ private:
 ///////////////////////////////////////////////////////////////////////////////
 
 struct policies {
-  static PolicyContext dynamic_memory_allocation;
+  // gtest_policy::mem_alloc.setup().deny();
+
+  static PolicyContext dynamic_memory_allocation; 
+  static PolicyContext std_cout;
+  static PolicyContext std_cerr;
+
+  static void Apply() noexcept;
+};
+
+///////////////////////////////////////////////////////////////////////////////
+// Test
+///////////////////////////////////////////////////////////////////////////////
+
+class Test : public ::testing::Test
+{
+public:
+	virtual ~Test() = default;
+protected:
+	Test() = default;
+
+	virtual void SetUp() override
+	{
+		::testing::Test::SetUp();
+		gtest_policy::policies::Apply();
+	}
+
+	virtual void TearDown() override
+	{
+		::testing::Test::TearDown();
+	}
+};
+
+///////////////////////////////////////////////////////////////////////////////
+// PolicyListener
+///////////////////////////////////////////////////////////////////////////////
+
+class PolicyMonitor
+{
+public:
+	virtual ~PolicyMonitor() { }
+	virtual void Start() = 0;
+	virtual bool Stop() = 0;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -100,67 +150,70 @@ struct policies {
 
 class PolicyListener : public ::testing::TestEventListener {
  public:
-  PolicyListener(PolicyContext& policy) noexcept;
+  PolicyListener(PolicyContext& policy, 
+	  std::unique_ptr<PolicyMonitor>&& monitor) noexcept;
   virtual ~PolicyListener() noexcept;
 
   void OnTestProgramStart(
 	  const ::testing::UnitTest& unit_test) override;
   void OnTestIterationStart(
 	  const ::testing::UnitTest& /*unit_test*/,
-      int /*iteration*/) override {}
+      int /*iteration*/) override { }
   void OnEnvironmentsSetUpStart(
-	  const ::testing::UnitTest& /*unit_test*/) override {}
+	  const ::testing::UnitTest& /*unit_test*/) override { }
   void OnEnvironmentsSetUpEnd(
-	  const ::testing::UnitTest& /*unit_test*/) override {}
+	  const ::testing::UnitTest& /*unit_test*/) override { }
   void OnTestSuiteStart(
 	  const ::testing::TestSuite& test_suite) override;
 #ifndef GTEST_REMOVE_LEGACY_TEST_CASEAPI_
   void OnTestCaseStart(
-	  const ::testing::TestCase& /*test_case*/) override {}
+	  const ::testing::TestCase& /*test_case*/) override { }
 #endif  //  GTEST_REMOVE_LEGACY_TEST_CASEAPI_
   void OnTestStart(
 	  const ::testing::TestInfo& test_info) override;
   void OnTestPartResult(
-	  const ::testing::TestPartResult& /*test_part_result*/) override {}
+	  const ::testing::TestPartResult& /*test_part_result*/) override { }
   void OnTestEnd(
 	  const ::testing::TestInfo& test_info) override;
   void OnTestSuiteEnd(
 	  const ::testing::TestSuite& test_suite) override;
 #ifndef GTEST_REMOVE_LEGACY_TEST_CASEAPI_
   void OnTestCaseEnd(
-	  const ::testing::TestCase& /*test_case*/) override {}
+	  const ::testing::TestCase& /*test_case*/) override { }
 #endif  //  GTEST_REMOVE_LEGACY_TEST_CASEAPI_
   void OnEnvironmentsTearDownStart(
-	  const ::testing::UnitTest& /*unit_test*/) override {}
+	  const ::testing::UnitTest& /*unit_test*/) override { }
   void OnEnvironmentsTearDownEnd(
-	  const ::testing::UnitTest& /*unit_test*/) override {}
+	  const ::testing::UnitTest& /*unit_test*/) override { }
   void OnTestIterationEnd(
 	  const ::testing::UnitTest& /*unit_test*/, 
-      int /*iteration*/) override {}
+      int /*iteration*/) override { }
   void OnTestProgramEnd(
 	  const ::testing::UnitTest& unit_test) override;
 
-  // INTERNAL IMPLEMENTATION - DO NOT USE IN A USER PROGRAM.
-  void ReportViolation();
-
-  // INTERNAL IMPLEMENTATION - DO NOT USE IN A USER PROGRAM.
   bool IsViolated() const noexcept;
   const PolicyContext& Policy() const noexcept;
   PolicyContext& Policy() noexcept;
 
  protected:
-  virtual void OnTestPartPolicyViolation() {};
+  //virtual void OnTestPartPolicyViolation() {};
   virtual void OnPolicyViolation() {};
-  virtual void OnPolicyChangeDuringTest(bool Deny) noexcept = 0;
 
  private: 
+  void Apply();
+  void ReportViolation();
+  void StopAndEvaluate();
   void RestorePolicy(bool Deny) noexcept;
+  void OnPolicyChangeDuringTest(bool Deny) noexcept;
 
+  std::unique_ptr<PolicyMonitor> monitor_;
   PolicyContext& policy_;
   bool global_policy_;
+  bool program_policy_;
   bool stored_policy_;
   bool violated_;
   bool in_test_scope_;
+  bool applied_;
 
   friend gtest_policy::PolicyContext;
 };
@@ -175,22 +228,12 @@ class PolicyListener : public ::testing::TestEventListener {
      new gtest_policy::DynamicMemoryAllocationPolicyListener());
 #endif // GTEST_POLICY_DYNAMIC_MEMORY_ALLOCATION
 
-class DynamicMemoryAllocationPolicyListener : public PolicyListener {
-public:
-	DynamicMemoryAllocationPolicyListener();
-	virtual ~DynamicMemoryAllocationPolicyListener();
-	virtual void OnTestStart(
-		const ::testing::TestInfo& test_info) override;
-	virtual void OnTestEnd(
-		const ::testing::TestInfo& test_info) override;
-
-protected:
-	void OnPolicyViolation() override;
-	void OnPolicyChangeDuringTest(bool Deny) noexcept override;
-
-private:
-	class Impl;
-	std::unique_ptr<Impl> impl_;
+class DynamicMemoryAllocationPolicyListener : public PolicyListener 
+{
+ public:
+  DynamicMemoryAllocationPolicyListener();
+ protected:
+  void OnPolicyViolation() override;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -201,6 +244,30 @@ private:
 #define GTEST_POLICY_SETUP \
   GTEST_POLICY_DYNAMIC_MEMORY_ALLOCATION
 #endif
+
+///////////////////////////////////////////////////////////////////////////////
+// StdOutPolicyListener
+///////////////////////////////////////////////////////////////////////////////
+
+class StdOutPolicyListener : public PolicyListener
+{
+ public:
+  StdOutPolicyListener();
+protected:
+  void OnPolicyViolation() override;
+};
+
+///////////////////////////////////////////////////////////////////////////////
+// StdErrPolicyListener
+///////////////////////////////////////////////////////////////////////////////
+
+class StdErrPolicyListener : public PolicyListener
+{
+public:
+	StdErrPolicyListener();
+protected:
+	void OnPolicyViolation() override;
+};
 
 } // namespace gtest_policy
 

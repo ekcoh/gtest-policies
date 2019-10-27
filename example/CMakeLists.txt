@@ -1,1 +1,3 @@
-add_subdirectory(01_dynamic_memory_allocation)
+add_subdirectory(01_getting_started)
+add_subdirectory(02_dynamic_memory_allocation)
+add_subdirectory(03_standard_output)

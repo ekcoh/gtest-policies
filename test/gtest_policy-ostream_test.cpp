@@ -34,66 +34,63 @@
 using namespace gtest_policy;
 
 // Instantiate common test for a policy
-INSTANTIATE_TYPED_TEST_SUITE_P(AllocPolicyTest, \
-	PolicyTest, DynamicMemoryAllocationPolicyListener);
+INSTANTIATE_TYPED_TEST_SUITE_P(StdOutPolicyTest, \
+	PolicyTest, StdOutPolicyListener);
 
-class DynamicMemoryAllocationPolicyTest : 
-	public PolicyTest<DynamicMemoryAllocationPolicyListener> { };
+class StdOutPolicyTest :
+	public PolicyTest<StdOutPolicyListener> { };
 
-TEST_F(DynamicMemoryAllocationPolicyTest,
-	should_fail_test__if_denied_and_allocating_memory_via_global_new)
+TEST_F(StdOutPolicyTest, should_fail_test__if_denied_and_writing_to_cout)
 {
-	GivenPreTestSequence();
 	policy.Deny();
-	std::make_unique<int>(0);
+	GivenPreTestSequence();
+	std::cout << "Hello";
 	AssertPostTestSequence(true);
 }
 
-TEST_F(DynamicMemoryAllocationPolicyTest,
-	should_not_fail_test__if_granted_and_allocating_memory_via_global_new)
+TEST_F(StdOutPolicyTest, should_not_fail_test__if_denied_and_flushing_cout)
 {
+	policy.Deny();
 	GivenPreTestSequence();
-	policy.Grant();
-	std::make_unique<int>(0);
+	std::cout.flush();
 	AssertPostTestSequence(false);
 }
 
-TEST_F(DynamicMemoryAllocationPolicyTest,
-	should_fail_test__if_denied_and_allocating_memory_via_global_new_array)
+TEST_F(StdOutPolicyTest, should_not_fail_test__if_denied_and_writing_to_cout)
 {
+	policy.Grant();
 	GivenPreTestSequence();
+	std::cout << "Hello";
+	AssertPostTestSequence(false);
+}
+
+// Instantiate common test for a policy
+INSTANTIATE_TYPED_TEST_SUITE_P(StdErrPolicyTest, \
+	PolicyTest, StdErrPolicyListener);
+
+class StdErrPolicyTest :
+	public PolicyTest<StdErrPolicyListener> { };
+
+TEST_F(StdErrPolicyTest, should_fail_test__if_denied_and_writing_to_cout)
+{
 	policy.Deny();
-	std::unique_ptr<int[]>(new int[5]);
+	GivenPreTestSequence();
+	std::cerr << "Hello";
 	AssertPostTestSequence(true);
 }
 
-TEST_F(DynamicMemoryAllocationPolicyTest,
-	should_not_fail_test__if_granted_and_allocating_memory_via_global_new_array)
+TEST_F(StdErrPolicyTest, should_not_fail_test__if_denied_and_flushing_cout)
 {
-	GivenPreTestSequence();
-	policy.Grant();
-	std::unique_ptr<int[]>(new int[5]);
-	AssertPostTestSequence(false);
-}
-
-TEST_F(DynamicMemoryAllocationPolicyTest,
-	should_fail_test__if_denied_and_allocating_memory_via_malloc)
-{
-	GivenPreTestSequence();
 	policy.Deny();
-	auto p = malloc(sizeof(int));
-	AssertPostTestSequence(true);
-
-	free(p); // redemtion for leak
+	GivenPreTestSequence();
+	std::cerr.flush();
+	AssertPostTestSequence(false);
 }
 
-TEST_F(DynamicMemoryAllocationPolicyTest,
-	should_not_fail_test__if_granted_and_allocating_memory_via_malloc)
+TEST_F(StdErrPolicyTest, should_not_fail_test__if_denied_and_writing_to_cout)
 {
-	GivenPreTestSequence();
 	policy.Grant();
-	auto p = malloc(sizeof(int));
+	GivenPreTestSequence();
+	std::cerr << "Hello";
 	AssertPostTestSequence(false);
-
-	free(p); // redemtion for leak
 }

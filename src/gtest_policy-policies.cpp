@@ -29,10 +29,18 @@
 //
 // Code style used is same as Google Test source code to make source code blend.
 
-#include <gtest/gtest.h>
+#include "gtest_policy/gtest_policy.h"
 
-int main(int argc, char **argv)
+gtest_policy::PolicyContext
+	gtest_policy::policies::dynamic_memory_allocation = gtest_policy::PolicyContext();
+gtest_policy::PolicyContext
+	gtest_policy::policies::std_cout = gtest_policy::PolicyContext();
+gtest_policy::PolicyContext
+	gtest_policy::policies::std_cerr = gtest_policy::PolicyContext();
+
+void gtest_policy::policies::Apply() noexcept
 {
-	::testing::InitGoogleTest(&argc, argv);
-	return RUN_ALL_TESTS();
+	gtest_policy::policies::dynamic_memory_allocation.Apply();
+	gtest_policy::policies::std_cout.Apply();
+	gtest_policy::policies::std_cerr.Apply();
 }
