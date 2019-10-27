@@ -35,11 +35,15 @@
 #include <gtest/gtest.h> // Google Test
 #include <memory>        // std::unique_ptr
 
-#ifndef GTEST_POLICY_ENABLE_ALLOCATION_POLICY
-#define GTEST_POLICY_ENABLE_ALLOCATION_POLICY \
-::testing::UnitTest::GetInstance()->listeners().Append( \
-	new gtest_policies::listener::MemAllocPolicyListener())
-#endif 
+#ifndef GTEST_POLICIES_APPEND_ALL_LISTENERS
+#define GTEST_POLICIES_APPEND_ALL_LISTENERS \
+	::testing::UnitTest::GetInstance()->listeners().Append( \
+		new gtest_policies::listener::MemAllocPolicyListener()); \
+	::testing::UnitTest::GetInstance()->listeners().Append( \
+		new gtest_policies::listener::StdOutPolicyListener()); \
+	::testing::UnitTest::GetInstance()->listeners().Append( \
+		new gtest_policies::listener::StdErrPolicyListener())
+#endif // GTEST_POLICIES_APPEND_ALL_LISTENERS
 
 // Convenience macro to generate a main program entry point with policy 
 // extension enabled by adding test listeners. Listeners are freed by 
@@ -49,12 +53,7 @@
 int main(int argc, char **argv) \
 { \
 	::testing::InitGoogleTest(&argc, argv); \
-	::testing::UnitTest::GetInstance()->listeners().Append( \
-		new gtest_policies::listener::MemAllocPolicyListener()); \
-	::testing::UnitTest::GetInstance()->listeners().Append( \
-		new gtest_policies::listener::StdOutPolicyListener()); \
-	::testing::UnitTest::GetInstance()->listeners().Append( \
-		new gtest_policies::listener::StdErrPolicyListener()); \
+	GTEST_POLICIES_APPEND_ALL_LISTENERS; \
 	return RUN_ALL_TESTS(); \
 }
 #endif // #ifndef GTEST_POLICY_MAIN
@@ -227,12 +226,6 @@ private:
 // MemAllocPolicyListener
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifndef GTEST_POLICY_DYNAMIC_MEMORY_ALLOCATION
-#define GTEST_POLICY_DYNAMIC_MEMORY_ALLOCATION \
-   ::testing::UnitTest::GetInstance()->listeners().Append( \
-     new gtest_policies::MemAllocPolicyListener());
-#endif // GTEST_POLICY_DYNAMIC_MEMORY_ALLOCATION
-
 class MemAllocPolicyListener : public PolicyListener
 {
 public:
@@ -240,15 +233,6 @@ public:
 protected:
 	void OnPolicyViolation() override;
 };
-
-///////////////////////////////////////////////////////////////////////////////
-// Convenience macros
-///////////////////////////////////////////////////////////////////////////////
-
-#ifndef GTEST_POLICY_SETUP
-#define GTEST_POLICY_SETUP \
-  GTEST_POLICY_DYNAMIC_MEMORY_ALLOCATION
-#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 // StdOutPolicyListener
