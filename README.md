@@ -68,12 +68,10 @@ The approach that requires the least amount of work is to apply all policies (on
 ```cpp
 class MyFixture : public ::testing::Test 
 { 
-   // ...
    void SetUp() override
    {
       gtest_policies::Apply();
    }
-   //...
 };
 
 TEST_F(MyFixture, MyTest)
@@ -93,6 +91,7 @@ TEST_F(MyFixture, MyTest)
 }
 ```
 
+A complete example of the basic setup can be found in [example/01_getting_started](example/01_getting_started)
 More examples can be found in [example/](example) folder.
 
 ## Dynamic Memory Allocation Policy
