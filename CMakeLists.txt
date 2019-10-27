@@ -5,7 +5,7 @@ cmake_minimum_required (VERSION 3.6)
 ###################################################################################################
 
 project(gtest_policies 
-    VERSION 0.0.0.0
+    VERSION 0.1.0
 	HOMEPAGE_URL https://github.com/ekcoh/gtest-policies
 	LANGUAGES CXX
 )
