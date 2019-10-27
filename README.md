@@ -125,9 +125,10 @@ The gtest_policies::StdErrPolicyListener manages the following policies:
 The detection of standard error writes relies on substituting the default std::cerr instance with a filter that forwards data but detects any writes. This makes it possible to identify and report this as a policy violation.
 
 ## Known Limitations
-- It would make sense to default all policies to being denied by default. However, due to limitations and implementation specific details of Google Test this is currently not possible and all policies are granted by default. This can easily be managed though by explicitly denying them in the SetUp method of the fixture, possibly in a shared base class like gtest_policies::policy_test.
+- It would be convenient to not have to call gtest_policies::Apply() in the SetUp method of all tests. However, due to limitations and implementation specific details of Google Test this is currently not possible. This can easily be managed though by explicitly denying them in the SetUp method of the fixture, possibly in a shared base class like gtest_policies::policy_test. This might change in the future if Google Test implement callbacks around the test implementation run method.
 - Dynamic memory allocation policy violations is currently only supported in MSVC via CRT Heap Debug builds in debug mode. On other configurations or tool-chains this policy reverts to basic global overloading of new and delete operators.
 
 ## License
 
 This project is released under the MIT license, see [License](https://github.com/ekcoh/gtest-policies/blob/master/LICENSE).
+This basically means you can do whatever you want with this project as long as you provide the original license and copyright information with your own project distribution.
