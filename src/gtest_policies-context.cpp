@@ -29,68 +29,69 @@
 //
 // Code style used is same as Google Test source code to make source code blend.
 
-#include "gtest_policy-policy_test.h"
+#include <gtest_policies/gtest_policies.h>
 
-using namespace gtest_policy;
+gtest_policies::PolicyContext::PolicyContext(
+	listener::PolicyListener* listener, bool is_denied_by_default) noexcept : 
+	listener_(listener), 
+	denied_(is_denied_by_default), 
+	denied_by_default_(is_denied_by_default)
+{ }
 
-// Instantiate common test for a policy
-INSTANTIATE_TYPED_TEST_SUITE_P(StdOutPolicyTest, \
-	PolicyTest, StdOutPolicyListener);
-
-class StdOutPolicyTest :
-	public PolicyTest<StdOutPolicyListener> { };
-
-TEST_F(StdOutPolicyTest, should_fail_test__if_denied_and_writing_to_cout)
+void gtest_policies::PolicyContext::Deny() noexcept
 {
-	policy.Deny();
-	GivenPreTestSequence();
-	std::cout << "Hello";
-	AssertPostTestSequence(true);
+	SetDenied(true);
 }
 
-TEST_F(StdOutPolicyTest, should_not_fail_test__if_denied_and_flushing_cout)
+void gtest_policies::PolicyContext::Grant() noexcept
 {
-	policy.Deny();
-	GivenPreTestSequence();
-	std::cout.flush();
-	AssertPostTestSequence(false);
+	SetDenied(false);
 }
 
-TEST_F(StdOutPolicyTest, should_not_fail_test__if_denied_and_writing_to_cout)
+void gtest_policies::PolicyContext::Apply() noexcept
 {
-	policy.Grant();
-	GivenPreTestSequence();
-	std::cout << "Hello";
-	AssertPostTestSequence(false);
+	const auto listener_ptr = listener_;
+	if (listener_ptr != nullptr)
+		listener_ptr->Apply();
 }
 
-// Instantiate common test for a policy
-INSTANTIATE_TYPED_TEST_SUITE_P(StdErrPolicyTest, \
-	PolicyTest, StdErrPolicyListener);
-
-class StdErrPolicyTest :
-	public PolicyTest<StdErrPolicyListener> { };
-
-TEST_F(StdErrPolicyTest, should_fail_test__if_denied_and_writing_to_cout)
+void gtest_policies::PolicyContext::SetDenied(bool denied) noexcept
 {
-	policy.Deny();
-	GivenPreTestSequence();
-	std::cerr << "Hello";
-	AssertPostTestSequence(true);
+	const auto listener_ptr = listener_;
+	if (listener_ptr != nullptr && listener_->in_test_scope_)
+	{
+		const auto previously_denied = denied_;
+		denied_ = denied;
+		if (listener_ptr->in_test_scope_ && previously_denied != denied)
+			listener_ptr->OnPolicyChangeDuringTest(denied);
+	}
+	else
+	{
+		denied_ = denied;
+	}
 }
 
-TEST_F(StdErrPolicyTest, should_not_fail_test__if_denied_and_flushing_cout)
+void gtest_policies::PolicyContext::Reset() noexcept
 {
-	policy.Deny();
-	GivenPreTestSequence();
-	std::cerr.flush();
-	AssertPostTestSequence(false);
+	denied_ = denied_by_default_;
 }
 
-TEST_F(StdErrPolicyTest, should_not_fail_test__if_denied_and_writing_to_cout)
+bool gtest_policies::PolicyContext::IsDenied() const noexcept
 {
-	policy.Grant();
-	GivenPreTestSequence();
-	std::cerr << "Hello";
-	AssertPostTestSequence(false);
+	return denied_;
+}
+
+bool gtest_policies::PolicyContext::IsViolated() const noexcept
+{
+	auto ptr = listener_;
+	if (ptr != nullptr)
+		return listener_->violated_;
+	return false;
+}
+
+void gtest_policies::PolicyContext::MarkAsViolated() noexcept
+{
+	auto ptr = listener_;
+	if (ptr != nullptr)
+		listener_->ReportViolation();
 }

@@ -29,18 +29,21 @@
 //
 // Code style used is same as Google Test source code to make source code blend.
 
-#include "gtest_policy/gtest_policy.h"
+#include "gtest_policies/gtest_policies.h"
 
-gtest_policy::PolicyContext
-	gtest_policy::policies::dynamic_memory_allocation = gtest_policy::PolicyContext();
-gtest_policy::PolicyContext
-	gtest_policy::policies::std_cout = gtest_policy::PolicyContext();
-gtest_policy::PolicyContext
-	gtest_policy::policies::std_cerr = gtest_policy::PolicyContext();
+gtest_policies::PolicyContext
+	gtest_policies::dynamic_memory_allocation = gtest_policies::PolicyContext();
+gtest_policies::PolicyContext
+	gtest_policies::standard_output = gtest_policies::PolicyContext();
+gtest_policies::PolicyContext
+	gtest_policies::standard_error = gtest_policies::PolicyContext();
 
-void gtest_policy::policies::Apply() noexcept
+void gtest_policies::Apply() noexcept
 {
-	gtest_policy::policies::dynamic_memory_allocation.Apply();
-	gtest_policy::policies::std_cout.Apply();
-	gtest_policy::policies::std_cerr.Apply();
+	gtest_policies::dynamic_memory_allocation.Apply();
+	gtest_policies::standard_output.Apply();
+	gtest_policies::standard_error.Apply();
 }
+
+//gtest_policies::PolicyContext gtest_policies::xxx = gtest_policies::PolicyContext();
+//gtest_policies::PolicyContext gtest_policies::xxx = gtest_policies::PolicyContext();

@@ -29,9 +29,10 @@
 //
 // Code style used is same as Google Test source code to make source code blend.
 
-#include <gtest_policy/gtest_policy.h>
+#include <gtest_policies/gtest_policies.h>
 
-gtest_policy::PolicyListener::PolicyListener(PolicyContext& policy, std::unique_ptr<PolicyMonitor>&& monitor) noexcept : 
+gtest_policies::listener::PolicyListener::PolicyListener(
+	PolicyContext& policy, std::unique_ptr<detail::PolicyMonitor>&& monitor) noexcept : 
 	::testing::TestEventListener(), 
 	policy_(policy), 
 	monitor_(std::move(monitor)),
@@ -43,25 +44,25 @@ gtest_policy::PolicyListener::PolicyListener(PolicyContext& policy, std::unique_
 	applied_(false)
 { }
 
-gtest_policy::PolicyListener::~PolicyListener() noexcept
+gtest_policies::listener::PolicyListener::~PolicyListener() noexcept
 {
 	policy_.listener_ = nullptr;
 }
 
-void gtest_policy::PolicyListener::OnTestProgramStart(
+void gtest_policies::listener::PolicyListener::OnTestProgramStart(
 	const ::testing::UnitTest& /*unit_test*/)
 { 
 	policy_.listener_ = this;
 	global_policy_ = policy_.IsDenied();
 }
 
-void gtest_policy::PolicyListener::OnTestSuiteStart(
+void gtest_policies::listener::PolicyListener::OnTestSuiteStart(
 	const ::testing::TestSuite& /*test_suite*/)
 {
 	program_policy_ = policy_.IsDenied();
 }
 
-void gtest_policy::PolicyListener::Apply()
+void gtest_policies::listener::PolicyListener::Apply()
 {
 	if (!applied_)
 	{
@@ -71,7 +72,7 @@ void gtest_policy::PolicyListener::Apply()
 	}
 }
 
-void gtest_policy::PolicyListener::OnTestStart(
+void gtest_policies::listener::PolicyListener::OnTestStart(
 	const ::testing::TestInfo& /*test_info*/)
 {
 	// Store policy setting before entering SetUp
@@ -84,13 +85,13 @@ void gtest_policy::PolicyListener::OnTestStart(
 	violated_ = false;
 }
 
-void gtest_policy::PolicyListener::StopAndEvaluate()
+void gtest_policies::listener::PolicyListener::StopAndEvaluate()
 {
 	if (monitor_->Stop())
 		ReportViolation();
 }
 
-void gtest_policy::PolicyListener::OnTestEnd(
+void gtest_policies::listener::PolicyListener::OnTestEnd(
 	const ::testing::TestInfo& /*test_info*/ )
 {
 	if (Policy().IsDenied())
@@ -104,7 +105,7 @@ void gtest_policy::PolicyListener::OnTestEnd(
 		OnPolicyViolation();
 
 		//GTEST_NONFATAL_FAILURE_(\
-		//	"Policy violation: gtest_policy::dynamic_memory_allocation\n" \
+		//	"Policy violation: gtest_policies::dynamic_memory_allocation\n" \
 		//	"Dynamic memory allocation is not permitted by the test policy " \
 		//	"for this test case. " \
 		//	"Re-run the test case in debug mode with debugger attached to " \
@@ -121,19 +122,19 @@ void gtest_policy::PolicyListener::OnTestEnd(
 	RestorePolicy(stored_policy_);
 }
 
-void gtest_policy::PolicyListener::OnTestSuiteEnd(
+void gtest_policies::listener::PolicyListener::OnTestSuiteEnd(
 	const ::testing::TestSuite& /*test_suite*/)
 {
 	RestorePolicy(program_policy_);
 }
 
-void gtest_policy::PolicyListener::OnTestProgramEnd(
+void gtest_policies::listener::PolicyListener::OnTestProgramEnd(
 	const ::testing::UnitTest& /*unit_test*/)
 { 
 	RestorePolicy(global_policy_);
 }
 
-void gtest_policy::PolicyListener::RestorePolicy(bool deny) noexcept
+void gtest_policies::listener::PolicyListener::RestorePolicy(bool deny) noexcept
 {
 	if (deny)
 		policy_.Deny();
@@ -141,28 +142,28 @@ void gtest_policy::PolicyListener::RestorePolicy(bool deny) noexcept
 		policy_.Grant();
 }
 
-void gtest_policy::PolicyListener::ReportViolation()
+void gtest_policies::listener::PolicyListener::ReportViolation()
 {
 	if (in_test_scope_ && policy_.IsDenied() && applied_)
 		violated_ = true;
 }
 
-bool gtest_policy::PolicyListener::IsViolated() const noexcept
+bool gtest_policies::listener::PolicyListener::IsViolated() const noexcept
 {
 	return violated_;
 }
 
-const gtest_policy::PolicyContext& gtest_policy::PolicyListener::Policy() const noexcept
+const gtest_policies::PolicyContext& gtest_policies::listener::PolicyListener::Policy() const noexcept
 {
 	return policy_;
 }
 
-gtest_policy::PolicyContext& gtest_policy::PolicyListener::Policy() noexcept
+gtest_policies::PolicyContext& gtest_policies::listener::PolicyListener::Policy() noexcept
 {
 	return policy_;
 }
 
-void gtest_policy::PolicyListener::OnPolicyChangeDuringTest(bool deny) noexcept
+void gtest_policies::listener::PolicyListener::OnPolicyChangeDuringTest(bool deny) noexcept
 {
 	if (!applied_)
 		return; // not applied

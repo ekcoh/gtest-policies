@@ -6,11 +6,11 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include <gtest/gtest.h>
-#include <gtest_policy/gtest_policy.h>
+#include <gtest_policies/gtest_policies.h>
 
-GTEST_POLICY_MAIN;
+GTEST_POLICIES_MAIN;
 
-class example_01_getting_started : public gtest_policy::Test { };
+class example_01_getting_started : public gtest_policies::Test { };
 
 TEST_F(example_01_getting_started, violating_std_cout)
 {

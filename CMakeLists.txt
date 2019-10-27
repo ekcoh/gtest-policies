@@ -1,10 +1,10 @@
 cmake_minimum_required (VERSION 3.6)
 
 ###################################################################################################
-# project: gtest_policy
+# project: gtest_policies
 ###################################################################################################
 
-project(gtest_policy 
+project(gtest_policies 
     VERSION 0.0.0.0
 	HOMEPAGE_URL https://github.com/ekcoh/gtest-policies
 	LANGUAGES CXX
@@ -50,7 +50,7 @@ endif(${PROJECT_NAME_UCASE}_DOWNLOAD_GTEST)
 ###################################################################################################
 
 add_library(${PROJECT_NAME} STATIC
-	"include/gtest_policy/gtest_policy.h"
+	"include/gtest_policies/gtest_policies.h"
 )
 
 if(MSVC)

@@ -32,7 +32,7 @@
 #ifndef GTEST_POLICY_ALLOC_H
 #define GTEST_POLICY_ALLOC_H
 
-#include <gtest_policy/gtest_policy.h>
+#include <gtest_policies/gtest_policies.h>
 
 #ifdef _MSC_VER
   #ifdef _DEBUG
@@ -81,9 +81,9 @@
   #include <Windows.h> // IsDebuggerPresent, DebugBreak
 #endif // GTEST_POLICY_CRTDBG_AVAILABLE
 
-namespace gtest_policy
+namespace gtest_policies
 {
-	class AllocMonitor : public gtest_policy::PolicyMonitor
+	class AllocMonitor : public gtest_policies::detail::PolicyMonitor
 	{
 	public:
 #ifdef GTEST_POLICY_CRTDBG_AVAILABLE
@@ -139,13 +139,13 @@ namespace gtest_policy
 
 			// IMPORTANT INFORMATION:
 			// If your debugger breaks here it means allocation has been denied 
-			// explicitly by the gtest_policy::dynamic_memory_allocation policy. 
+			// explicitly by the gtest_policies::dynamic_memory_allocation policy. 
 			// Check your current call stack to find out where this memory allocation 
 			// originates from.
 			
 			// TODO In test scope && not violated
-			if (gtest_policy::policies::dynamic_memory_allocation.IsDenied() &&
-				gtest_policy::policies::dynamic_memory_allocation.IsViolated() &&
+			if (gtest_policies::dynamic_memory_allocation.IsDenied() &&
+				gtest_policies::dynamic_memory_allocation.IsViolated() &&
 				IsDebuggerPresent())
 			{
 				DebugBreak();
@@ -172,7 +172,7 @@ void* operator new(std::size_t s) throw()
 void* operator new(std::size_t s) throw(std::bad_alloc)
 #endif
 {
-	gtest_policy::policies::dynamic_memory_allocation.MarkAsViolated();
+	gtest_policies::policies::dynamic_memory_allocation.MarkAsViolated();
 	return malloc(s);
 }
 
@@ -188,7 +188,7 @@ void *operator new[](std::size_t s) throw()
 void *operator new[](std::size_t s) throw(std::bad_alloc)
 #endif
 {
-	gtest_policy::policies::dynamic_memory_allocation.MarkAsViolated();
+	gtest_policies::policies::dynamic_memory_allocation.MarkAsViolated();
 	return malloc(s);
 }
 
@@ -199,11 +199,11 @@ void operator delete[](void *p) throw()
 
 #endif
 
-gtest_policy::DynamicMemoryAllocationPolicyListener::DynamicMemoryAllocationPolicyListener() : 
-	PolicyListener(policies::dynamic_memory_allocation, std::make_unique<AllocMonitor>())
+gtest_policies::listener::MemAllocPolicyListener::MemAllocPolicyListener() :
+	PolicyListener(dynamic_memory_allocation, std::make_unique<AllocMonitor>())
 { }
 
-void gtest_policy::DynamicMemoryAllocationPolicyListener::OnPolicyViolation()
+void gtest_policies::listener::MemAllocPolicyListener::OnPolicyViolation()
 {
 	GTEST_NONFATAL_FAILURE_(\
 		"Policy violation: gtest_policy::dynamic_memory_allocation\n" \

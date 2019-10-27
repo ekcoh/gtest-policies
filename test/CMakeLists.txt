@@ -1,8 +1,8 @@
 add_executable(${PROJECT_NAME}_unit_tests
 	main.cpp
-	gtest_policy-alloc_test.cpp
-	gtest_policy-context_test.cpp
-	gtest_policy-ostream_test.cpp
+	gtest_policies-alloc_test.cpp
+	gtest_policies-context_test.cpp
+	gtest_policies-ostream_test.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}_unit_tests

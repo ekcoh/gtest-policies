@@ -35,7 +35,7 @@
 #include <gtest/gtest.h>
 #include <gtest/gtest-spi.h> // enables testing test failures
 
-#include <gtest_policy/gtest_policy.h>
+#include <gtest_policies/gtest_policies.h>
 
 template<class T>
 T* Create() { return new T(); }
@@ -130,7 +130,7 @@ public:
 	}
 
 	Listener* listener;
-	gtest_policy::PolicyContext& policy; 
+	gtest_policies::PolicyContext& policy;
 };
 
 TYPED_TEST_SUITE_P(PolicyTest);

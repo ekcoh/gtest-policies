@@ -29,16 +29,17 @@
 //
 // Code style used is same as Google Test source code to make source code blend.
 
-#include "gtest_policy-policy_test.h"
+#include "gtest_policies-policy_test.h"
 
-using namespace gtest_policy;
+using namespace gtest_policies;
+using namespace gtest_policies::listener;
 
 // Instantiate common test for a policy
 INSTANTIATE_TYPED_TEST_SUITE_P(AllocPolicyTest, \
-	PolicyTest, DynamicMemoryAllocationPolicyListener);
+	PolicyTest, MemAllocPolicyListener);
 
 class DynamicMemoryAllocationPolicyTest : 
-	public PolicyTest<DynamicMemoryAllocationPolicyListener> { };
+	public PolicyTest<MemAllocPolicyListener> { };
 
 TEST_F(DynamicMemoryAllocationPolicyTest,
 	should_fail_test__if_denied_and_allocating_memory_via_global_new)

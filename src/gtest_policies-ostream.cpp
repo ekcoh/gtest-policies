@@ -29,13 +29,13 @@
 //
 // Code style used is same as Google Test source code to make source code blend.
 
-#include <gtest_policy/gtest_policy.h>
+#include <gtest_policies/gtest_policies.h>
 
 #include <iostream>
 #include <cctype>
 #include <cstdio>
 
-namespace gtest_policy
+namespace gtest_policies
 {
 	class CountingStreamBufferFilter : public std::streambuf
 	{
@@ -78,7 +78,7 @@ namespace gtest_policy
 	};
 
 	template<class Char, class Traits = std::char_traits<Char>>
-	class OutputStreamMonitor : public gtest_policy::PolicyMonitor
+	class OutputStreamMonitor : public gtest_policies::detail::PolicyMonitor
 	{
 	public:
 		OutputStreamMonitor(std::basic_ostream<Char, Traits>& ostream) 
@@ -108,11 +108,11 @@ namespace gtest_policy
 	};
 }
 
-gtest_policy::StdOutPolicyListener::StdOutPolicyListener()
-	: PolicyListener(policies::std_cout, std::make_unique<OutputStreamMonitor<char>>(std::cout))
+gtest_policies::listener::StdOutPolicyListener::StdOutPolicyListener()
+	: PolicyListener(standard_output, std::make_unique<OutputStreamMonitor<char>>(std::cout))
 { }
 
-void gtest_policy::StdOutPolicyListener::OnPolicyViolation()
+void gtest_policies::listener::StdOutPolicyListener::OnPolicyViolation()
 {
 	GTEST_NONFATAL_FAILURE_(\
 		"Policy violation: gtest_policy::cxx_std_out\n" \
@@ -122,11 +122,11 @@ void gtest_policy::StdOutPolicyListener::OnPolicyViolation()
 		"break at the statement causing this policy violation. ");
 }
 
-gtest_policy::StdErrPolicyListener::StdErrPolicyListener()
-	: PolicyListener(policies::std_cerr, std::make_unique<OutputStreamMonitor<char>>(std::cerr))
+gtest_policies::listener::StdErrPolicyListener::StdErrPolicyListener()
+	: PolicyListener(standard_error, std::make_unique<OutputStreamMonitor<char>>(std::cerr))
 { }
 
-void gtest_policy::StdErrPolicyListener::OnPolicyViolation()
+void gtest_policies::listener::StdErrPolicyListener::OnPolicyViolation()
 {
 	GTEST_NONFATAL_FAILURE_(\
 		"Policy violation: gtest_policy::cxx_std_err\n" \

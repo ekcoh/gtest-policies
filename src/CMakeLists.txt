@@ -1,8 +1,8 @@
 target_sources(${PROJECT_NAME}
 	PRIVATE
-		"${CMAKE_CURRENT_LIST_DIR}/gtest_policy-context.cpp"
-		"${CMAKE_CURRENT_LIST_DIR}/gtest_policy-listener.cpp"
-		"${CMAKE_CURRENT_LIST_DIR}/gtest_policy-alloc.cpp"
-		"${CMAKE_CURRENT_LIST_DIR}/gtest_policy-ostream.cpp"
-		"${CMAKE_CURRENT_LIST_DIR}/gtest_policy-policies.cpp"
+		"${CMAKE_CURRENT_LIST_DIR}/gtest_policies-context.cpp"
+		"${CMAKE_CURRENT_LIST_DIR}/gtest_policies-listener.cpp"
+		"${CMAKE_CURRENT_LIST_DIR}/gtest_policies-alloc.cpp"
+		"${CMAKE_CURRENT_LIST_DIR}/gtest_policies-ostream.cpp"
+		"${CMAKE_CURRENT_LIST_DIR}/gtest_policies-policies.cpp"
 )
