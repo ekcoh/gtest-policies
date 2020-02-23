@@ -106,8 +106,7 @@ namespace gtest_policies
 #ifdef GTEST_POLICY_CRTDBG_AVAILABLE
 			if (IsDebuggerPresent())
 			{
-				stored_alloc_hook = _CrtGetAllocHook();
-				_CrtSetAllocHook(AllocHook);
+				stored_alloc_hook = _CrtSetAllocHook(AllocHook);
 			}
 
 			_CrtMemState state;
@@ -130,11 +129,26 @@ namespace gtest_policies
 			}
 
 			const auto diff = post_count - pre_count_;
-			return diff != 0;
+			return diff != 0; // memory was allocated or not
 #endif // GTEST_POLICY_CRTDBG_AVAILABLE
 		}
 
 	private:
+		static inline int __cdecl InvokeWrappedAllocHook(
+			int nAllocType,
+			void* pvData,
+			size_t nSize,
+			int nBlockUse,
+			long lRequest,
+			const unsigned char * szFileName,
+			int nLine)
+		{
+			if (stored_alloc_hook == nullptr)
+				return TRUE;
+			return stored_alloc_hook(nAllocType, pvData, nSize, 
+				nBlockUse, lRequest, szFileName, nLine);
+		}
+
 #ifdef GTEST_POLICY_CRTDBG_AVAILABLE
 		static int __cdecl AllocHook(
 			int nAllocType, 
@@ -146,26 +160,13 @@ namespace gtest_policies
 			int nLine)
 		{
 			if (nAllocType == _HOOK_FREE)
-			{
-				if (stored_alloc_hook == nullptr)
-					return TRUE;
-				return stored_alloc_hook(
-					nAllocType, 
-					pvData, 
-					nSize, 
-					nBlockUse, 
-					lRequest, 
-					szFileName, 
-					nLine);
-			}
+				return InvokeWrappedAllocHook(nAllocType, pvData, nSize, nBlockUse, lRequest, szFileName, nLine);
 
 			// IMPORTANT INFORMATION:
 			// If your debugger breaks here it means allocation has been denied 
 			// explicitly by the gtest_policies::dynamic_memory_allocation policy. 
 			// Check your current call stack to find out where this memory allocation 
 			// originates from.
-			
-			// TODO In test scope && not violated
 			if (gtest_policies::dynamic_memory_allocation.IsDenied() &&
 				gtest_policies::dynamic_memory_allocation.IsViolated() &&
 				IsDebuggerPresent())
@@ -173,16 +174,7 @@ namespace gtest_policies
 				DebugBreak();
 			}
 
-			if (stored_alloc_hook == nullptr)
-				return TRUE; // Allow the memory operation to proceed
-			return stored_alloc_hook(
-				nAllocType,
-				pvData,
-				nSize,
-				nBlockUse,
-				lRequest,
-				szFileName,
-				nLine);
+			return InvokeWrappedAllocHook(nAllocType, pvData, nSize, nBlockUse, lRequest, szFileName, nLine);
 		}
 
 		size_t pre_count_;
