@@ -1,3 +1,5 @@
+[![Build status](https://ci.appveyor.com/api/projects/status/gof9v7avc6jmgt9k?svg=true)](https://ci.appveyor.com/project/ekcoh/gtest-policies)
+
 # gtest_policies
 Google test policy extensions for even better C++ unit testing by introducing code policies that helps detecting undesired constructs in own or submodule code. The project supports C++11 and above. Some features are limited in functionality on certain platforms and configurations, but full feature set is available on Windows with MSVC tool-chain.
 
