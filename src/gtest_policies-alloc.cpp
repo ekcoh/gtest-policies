@@ -103,8 +103,9 @@ namespace gtest_policies
 
 			const auto diff = post_count - pre_count_;
 			return diff != 0; // memory was allocated or not
-#endif // GTEST_POLICY_CRTDBG_AVAILABLE
+#else
             return false;
+#endif // GTEST_POLICY_CRTDBG_AVAILABLE
 		}
 
 	private:
@@ -169,7 +170,7 @@ void* operator new(std::size_t s) throw()
 void* operator new(std::size_t s) throw(std::bad_alloc)
 #endif
 {
-	gtest_policies::policies::dynamic_memory_allocation.MarkAsViolated();
+    gtest_policies::dynamic_memory_allocation.MarkAsViolated();
 	return malloc(s);
 }
 
@@ -185,7 +186,7 @@ void *operator new[](std::size_t s) throw()
 void *operator new[](std::size_t s) throw(std::bad_alloc)
 #endif
 {
-	gtest_policies::policies::dynamic_memory_allocation.MarkAsViolated();
+    gtest_policies::dynamic_memory_allocation.MarkAsViolated();
 	return malloc(s);
 }
 
